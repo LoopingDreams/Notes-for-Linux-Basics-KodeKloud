@@ -21,7 +21,7 @@ Here is a condensed cheat sheet for **Working with Shell 1**, organized for quic
 | -------------- | ------------------------------------- | -------------------- |
 | **`mkdir`**    | Make a new directory.                 | `mkdir Photos`       |
 | **`mkdir -p`** | Make parent directories as needed.    | `mkdir -p a/b/c`     |
-| **`cp`**       | Copy a file.                          | `cp file1 file2`     |
+| **`cp`**       | <br>a file.                           | `cp file1 file2`     |
 | **`cp -r`**    | Copy a directory recursively.         | `cp -r dir1 dir2`    |
 | **`mv`**       | Move or Rename a file/directory.      | `mv old.txt new.txt` |
 | **`rm`**       | Remove (delete) a file.               | `rm file.txt`        |
@@ -894,3 +894,545 @@ Here is the **System Targets (Runlevels)** section for your cheat sheet. This co
 `systemctl start graphical.target`
 
 - **Action:** You forced the graphical interface to load _right now_ without rebooting.
+
+
+
+### **Detailed Breakdown**
+
+**Command:**
+
+`grep -e String /root/nautilus.xml | wc -l`
+
+1. **`grep`**: The search tool (Global Regular Expression Print).
+    
+2. **`-e String`**: Specifies the **pattern** to search for.
+    
+    - _Note:_ You asked it to look for the exact text "String".
+        
+3. **`/root/nautilus.xml`**: The file being searched.
+    
+4. **`|` (Pipe)**: Takes the result of the search (the list of lines found) and passes it to the next command.
+    
+5. **`wc -l`**: Word Count with the **lines** flag.
+    
+    - Instead of printing the lines to the screen, it just counts them.
+        
+
+---
+
+### **Interpreting Your Results**
+
+- **Result `66`**:
+    
+    This means the word "String" was found on **66 lines** inside the file.
+    
+    _(If you just ran the `sed` command to replace "String" with "LUSV" and you still see 66, it means the replacement might not have worked, or there are still 66 instances left)._
+    
+- **Result `0`**:
+    
+    This means the word "About" was found **0 times**. It does not exist in the file.
+    
+
+---
+
+### **Cheat Sheet Addition: Searching & Counting**
+
+Here is the **Search (grep)** section for your cheat sheet.
+
+|**Command**|**Description**|**Example**|
+|---|---|---|
+|**`grep`**|Search for text in a file.|`grep "error" log.txt`|
+|**`grep -i`**|Search ignoring case (finds "Error", "ERROR").|`grep -i "error" log.txt`|
+|**`grep -r`**|Recursive search (search inside all folders).|`grep -r "config" /etc/`|
+|**`\| wc -l`**|Count the number of matches found.|`grep "User" file \| wc -l`|
+### **Time & Date Management (timedatectl)**
+
+|**Command**|**Description**|**Example**|
+|---|---|---|
+|**`timedatectl`**|Check current system time and timezone status.|`timedatectl`|
+|**`timedatectl list-timezones`**|List all available timezones.|`timedatectl list-timezones`|
+|**`timedatectl set-timezone`**|Change the system timezone.|`timedatectl set-timezone America/New_York`|
+
+---
+
+### **Detailed Example Breakdown**
+
+**1. Search for the correct Timezone**
+
+`timedatectl list-timezones | grep -i saipan`
+
+- **`timedatectl list-timezones`**: This prints a massive list of every city/zone known to the system.
+    
+- **`| grep -i saipan`**: Since you don't want to scroll through thousands of lines, you pipe the output to `grep` to find "Saipan".
+    
+    - _Result:_ You found `Pacific/Saipan`.
+        
+
+**2. Apply the Change**
+
+`timedatectl set-timezone Pacific/Saipan`
+
+- **Action:** This updates the `/etc/localtime` file to match the new region.
+    
+- **Result:** Your "Local time" jumped from 17:59 (UTC) to 03:59 (ChST) automatically.
+
+
+### **Firewall Management (firewalld)**
+
+|**Command**|**Description**|**Example**|
+|---|---|---|
+|**`firewall-cmd --list-all`**|View all current rules (ports, services) for the default zone.|`firewall-cmd --list-all`|
+|**`--add-port`**|Open a specific port.|`firewall-cmd --add-port=80/tcp`|
+|**`--permanent`**|Write rule to config file (survives reboot).|`firewall-cmd --permanent ...`|
+|**`--reload`**|Reload firewall to apply permanent changes.|`firewall-cmd --reload`|
+
+---
+
+### **Detailed Example Breakdown**
+
+**1. Check Current Status**
+
+`sudo firewall-cmd --zone=public --list-all`
+
+- **`--zone=public`**: Firewalls have different "zones" (like Home, Work, Public). "Public" is the standard strict zone for servers.
+    
+- **Output:** You saw `ports:` was empty. No extra doors were open.
+    
+
+**2. Open Port 5001 (Permanently)**
+
+`sudo firewall-cmd --zone=public --permanent --add-port=5001/tcp`
+
+- **`--add-port=5001/tcp`**: Allow traffic on port 5001 using the TCP protocol.
+    
+- **`--permanent`**: **Crucial Flag!**
+    
+    - _Without this flag:_ The port opens _now_, but if you reboot the server, it closes again.
+        
+    - _With this flag:_ It saves the rule to the configuration file, but it does **not** open the port immediately in the live system.
+        
+
+**3. Apply the Changes**
+
+`sudo firewall-cmd --reload`
+
+- **Action:** This tells the firewall to re-read its configuration files.
+    
+- **Why?** Because you used `--permanent`, the change was only written to disk. The `reload` command pushes that saved config into the "live" runtime environment.
+    
+
+**4. Verify**
+
+- The final `list-all` showed `ports: 5001/tcp`. Success!
+
+
+### **System Resource Limits (limits.conf)**
+
+|**Column**|**Description**|**Example**|
+|---|---|---|
+|**Domain**|The username or group (groups start with `@`).|`nfsuser` or `@developers`|
+|**Type**|**Soft** (Warning level) or **Hard** (Absolute Maximum).|`soft` / `hard`|
+|**Item**|What resource to limit (e.g., `nproc`, `nofile`, `fsize`).|`nproc`|
+|**Value**|The specific number allowed.|`2048`|
+
+---
+
+### **Detailed Example Breakdown**
+
+**The Configuration:**
+
+`nfsuser soft nproc 1026`
+
+`nfsuser hard nproc 2024`
+
+**1. `nproc` (Number of Processes)**
+
+- This rule restricts how many "tasks" or "processes" the user `nfsuser` can run simultaneously.
+    
+- _Why?_ This prevents accidental "fork bombs" (where a script runs out of control and spawns infinite copies of itself, freezing the server).
+    
+
+**2. Soft vs. Hard Limits**
+
+- **Soft Limit (`1026`):** This is the "Safety Zone."
+    
+    - The user is allowed to exceed this number temporarily, but they might get warnings.
+        
+    - The user _can_ change this limit themselves (up to the Hard limit) using the `ulimit` command.
+        
+- **Hard Limit (`2024`):** This is the "Brick Wall."
+    
+    - The user cannot go above this number.
+        
+    - Only `root` can increase this limit.
+        
+    - If `nfsuser` tries to start the 2,025th process, the system will simply say "Resource temporarily unavailable" and deny it.
+
+### **SELinux Management**
+
+|**Command**|**Description**|**Example**|
+|---|---|---|
+|**`sestatus`**|Check current SELinux status.|`sestatus`|
+|**`setenforce 0`**|Switch to **Permissive** mode (temp).|`setenforce 0`|
+|**`setenforce 1`**|Switch to **Enforcing** mode (temp).|`setenforce 1`|
+|**`/etc/selinux/config`**|Config file for **Permanent** changes.|`vi /etc/selinux/config`|
+|**`yum install`**|Install packages (RedHat/CentOS).|`yum install package_name`|
+
+---
+
+### **Detailed Example Breakdown**
+
+**1. Install Tools**
+
+`sudo yum install selinux-policy...`
+
+- **`yum`**: The package manager for CentOS/RedHat (similar to `apt` on Ubuntu).
+    
+- **Action:** You ensured the core SELinux software was actually installed before trying to configure it.
+    
+
+**2. Disable Permanently**
+
+`vi /etc/selinux/config`
+
+- **Action:** You changed `SELINUX=enforcing` to `SELINUX=disabled`.
+    
+- **The Modes:**
+    
+    - **`Enforcing`**: The guard is active. If a rule is broken, it blocks the action AND logs it.
+        
+    - **`Permissive`**: The guard is watching but lazy. If a rule is broken, it lets it happen but **logs it** (good for troubleshooting).
+        
+    - **`Disabled`**: The guard is gone. No blocking, no logging.
+        
+
+**3. The "Reboot" Rule**
+
+- **Important:** Changing the config file to `disabled` requires a **REBOOT** to take effect.
+    
+- **Why?** SELinux loads very early in the boot process (inside the Kernel). You can't fully turn it off while the system is running.
+    
+- _Note:_ If you just wanted to stop it temporarily without rebooting, you would use `sudo setenforce 0`.
+
+
+### **What this command does**
+
+It essentially asks the system: _"If I were logged in as `nfsuser`, what is the absolute maximum number of processes (Hard Limit) I would be allowed to run?"_
+
+Based on your previous edit (`nfsuser hard nproc 2024`), the output should be: **`2024`**
+
+---
+
+### **Detailed Command Breakdown**
+
+`sudo su -c "su -c 'ulimit -Hu' -s /bin/sh nfsuser"`
+
+1. **`sudo su -c "..."`**: Runs the enclosed command as **Root**. (This is needed because usually only root can switch to other users without a password).
+    
+2. **`su ... nfsuser`**: Switch from Root to **nfsuser**.
+    
+3. **`-s /bin/sh`**: **Override the Shell.**
+    
+    - _Why is this here?_ System users (like `nfsuser`) often have their shell set to `/sbin/nologin` for security, meaning you can't normally log in as them. This flag forces the system to use a valid shell (`/bin/sh`) just for this one command, allowing it to run.
+        
+4. **`-c 'ulimit -Hu'`**: The actual check.
+    
+    - **`-H`**: Check the **H**ard limit (the maximum ceiling).
+        
+    - **`-u`**: Check the **u**ser process limit (`nproc`).
+
+
+### **The Command**
+
+Bash
+
+```
+ls -a1 /etc/ > /root/etc_file_list.txt
+```
+
+### **Detailed Breakdown**
+
+|**Component**|**Description**|
+|---|---|
+|**`ls`**|The list command.|
+|**`-a`**|**All**: Includes hidden files, as well as `.` (current directory) and `..` (parent directory).|
+|**`-1`**|**One**: Forces the output to list **one file per line**.|
+|**`/etc/`**|The source directory you are listing.|
+|**`>`**|**Redirects** the output into the file (overwriting it).|
+|**`/root/etc_file_list.txt`**|The destination file path.|
+
+---
+
+### **Verification**
+
+To check if the file was created correctly and contains the data:
+
+Bash
+
+```
+head -n 5 /root/etc_file_list.txt
+```
+
+
+### **2. The Verification Step**
+
+To verify this worked, you generally check two things: **Format** and **Content**.
+
+**A. Checking the Format (Visual)**
+
+Bash
+
+```
+head -n 5 /root/etc_file_list.txt
+```
+
+- **What it does:** Shows the first 5 lines of the new file.
+    
+- **Why it works:** You should immediately see `.` and `..` at the very top. If you see them, you know you used the `-a` flag correctly. If the list is vertical, you know `-1` worked.
+    
+
+**B. Checking the Count (Mathematical)**
+
+Bash
+
+```
+wc -l /root/etc_file_list.txt
+```
+
+- **What it does:** Counts the number of **lines** in the file.
+    
+- **Why it works:** You can compare this number to the actual number of files in the directory.
+    
+    - _Command to compare:_ `ls -a1 /etc/ | wc -l`
+        
+    - If the number in your text file matches the number from the live command, your file is a perfect snapshot of the directory.
+
+
+```
+/home/bob
+[root@centos-host bob]# cd backup
+bash: cd: backup: No such file or directory
+[root@centos-host bob]# cp -b /etc/hosts /backup/system_configs/hosts.bak
+[root@centos-host bob]# cat -b /etc/hosts /backup/system_configs/hosts.bak
+     1  # Kubernetes-managed hosts file.
+     2  127.0.0.1       localhost
+     3  ::1     localhost ip6-localhost ip6-loopback
+     4  fe00::0 ip6-localnet
+     5  fe00::0 ip6-mcastprefix
+     6  fe00::1 ip6-allnodes
+     7  fe00::2 ip6-allrouters
+     8  192.168.144.245 centos-host
+
+     9  # Entries added by HostAliases.
+    10  10.0.0.6        docker-registry-mirror.kodekloud.com
+    11  # Kubernetes-managed hosts file.
+    12  127.0.0.1       localhost
+    13  ::1     localhost ip6-localhost ip6-loopback
+    14  fe00::0 ip6-localnet
+    15  fe00::0 ip6-mcastprefix
+    16  fe00::1 ip6-allnodes
+    17  fe00::2 ip6-allrouters
+    18  192.168.144.245 centos-host
+
+    19  # Entries added by HostAliases.
+    20  10.0.0.6        docker-registry-mirror.kodekloud.com
+
+```
+
+Here is how the terminal output proves it:
+
+1. **The Copy Worked:** The command `cp -b /etc/hosts /backup/system_configs/hosts.bak` successfully copied the file. If the folder didn't exist or permissions were wrong, you would have seen an error message immediately.
+    
+2. **The Content Matches:** You used `cat -b` to display **both** files at once.
+    
+    - **Lines 1–10** display the original `/etc/hosts`.
+        
+    - **Lines 11–20** display your new copy `/backup/system_configs/hosts.bak`.
+        
+    - Since lines 11–20 are identical to 1–10, the copy is perfect.
+        
+
+### **A Note on the `-b` Flag**
+
+You used `cp -b` (backup).
+
+- **What it does:** If `hosts.bak` _already_ existed in that folder, `cp -b` would have renamed the old one (usually to `hosts.bak~`) before pasting the new one.
+    
+- **Is it wrong?** No, it is a safe and smart habit, though for a simple copy instruction, just `cp` (without flags) is standard.
+    
+
+### **Summary for Cheat Sheet**
+
+| **Command**             | **Description**                                                |     |
+| ----------------------- | -------------------------------------------------------------- | --- |
+| **`cp source dest`**    | Standard copy.                                                 |     |
+| **`cp -b source dest`** | Copy, but if destination exists, make a backup of it first.    |     |
+| **`cat -b file`**       | Display file content with line numbers (non-blank lines only). |     |
+### **Hostname Configuration**
+
+|**Command**|**Description**|**Example**|
+|---|---|---|
+|**`hostname`**|View the current system name.|`hostname`|
+|**`hostname -i`**|View the IP address associated with the hostname.|`hostname -i`|
+|**`hostnamectl`**|**Modern Way:** View detailed system info (OS, Kernel, Architecture).|`hostnamectl`|
+|**`hostnamectl set-hostname`**|**Persistent Change:** Set a new name that survives reboot.|`hostnamectl set-hostname web-server-01`|
+
+---
+
+### **Detailed Example Breakdown**
+
+**1. Viewing the Name**
+
+Bash
+
+```
+[root@stapp01 ~]# hostname
+stapp01.stratos.xfusioncorp.com
+```
+
+**2. Changing the Name (The Old vs. New Way)**
+
+- **Temporary (Old Way):**
+    
+    `hostname new-name`
+    
+    - _Result:_ The name changes immediately, but if you reboot, it goes back to the old name.
+        
+- **Permanent (New Way - Systemd):**
+    
+    `hostnamectl set-hostname new-name`
+    
+    - _Result:_ This updates the `/etc/hostname` file automatically. The name change is permanent.
+
+
+Here is the command to count the total number of lines in `/etc/services`.
+
+### **The Command**
+
+Bash
+
+```
+wc -l /etc/services
+```
+
+### **Explanation**
+
+- **`wc`**: Stands for **W**ord **C**ount.
+    
+- **`-l`**: The "lines" flag. It tells the command to count newline characters only.
+    
+- **`/etc/services`**: The file path you are checking.
+    
+
+**Example Output:**
+
+Bash
+
+```
+11473 /etc/services
+```
+
+_(This means there are 11,473 lines in that file)._
+
+### **Alternative (Clean Number)**
+
+If you want **only** the number (without the filename printed next to it), you can pipe the file content into the command:
+
+Bash
+
+```
+cat /etc/services | wc -l
+```
+
+
+
+
+Bash
+
+```
+find /etc -type f -name "*.conf" > /root/etc_conf_files.txt
+```
+
+### **Detailed Breakdown**
+
+|**Component**|**Description**|
+|---|---|
+|**`find`**|The search tool.|
+|**`/etc`**|The directory where the search starts.|
+|**`-type f`**|Ensures you are looking for **files** only (ignores directories that might end in .conf).|
+|**`-name "*.conf"`**|The search pattern. The asterisk `*` is a wildcard meaning "anything before .conf".|
+|**`>`**|Redirects the list of found files into the target file.|
+|**`/root/etc_conf_files.txt`**|The destination file.|
+
+### **Verification**
+
+To check if the file was created and has content:
+
+Bash
+
+```
+wc -l /root/etc_conf_files.txt
+```
+
+
+The `tee` command is ==a standard command-line utility in Unix and Linux systems that reads from **standard input** and writes the output to both **standard output** (the terminal screen) and one or more **files** simultaneously==. 
+
+It is named after a T-shaped pipe fitting, as it splits the data flow into two or more directions. This functionality is especially useful for monitoring a command's output in real-time while also saving it to a log file for future analysis or debugging. 
+
+Syntax
+
+The basic syntax is as follows:
+
+bash
+
+```
+command | tee [OPTIONS] [FILE...]
+```
+
+- `command`: The initial command whose output you want to redirect.
+- `|` (pipe): Redirects the standard output of the preceding command to the standard input of `tee`.
+- `tee`: The command itself.
+- `[OPTIONS]`: Optional flags to modify behavior.
+- `[FILE...]`: One or more files where the output will be saved. 
+
+Common Options
+
+- `-a`, `--append`: Appends the output to an existing file instead of overwriting its content.
+- `-i`, `--ignore-interrupts`: Ignores interrupt signals (like those generated by pressing `Ctrl+C`). 
+
+Examples
+
+- **View output and save to a file:**
+    
+    bash
+    
+    ```
+    ls -l | tee directory-listing.txt
+    ```
+    
+    This command will display the directory listing on the screen and save the same output to `directory-listing.txt`.
+- **Append output to an existing file:**
+    
+    bash
+    
+    ```
+    uptime | tee -a system-log.txt
+    ```
+    
+    This appends the current system uptime information to `system-log.txt` without erasing previous entries.
+- **Write to a privileged file using `sudo`:**
+    
+    bash
+    
+    ```
+    echo "some text" | sudo tee /path/to/root_file > /dev/null
+    ```
+    
+    Standard shell redirection (`>`) happens before `sudo` executes the command, which would cause a permission error if the target file is owned by root. Using `tee` with `sudo` elevates the privileges for the writing process itself, allowing the operation to succeed. Redirecting standard output to `/dev/null` suppresses the mirrored output in the console if desired.
+- **Write to multiple files simultaneously:**
+    
+    bash
+    
+    ```
+    echo "Hello World" | tee file1.txt file2.txt file3.txt
+    ```
